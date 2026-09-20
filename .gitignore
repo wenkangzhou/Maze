@@ -1,0 +1,47 @@
+# Dependencies
+/node_modules/
+/.pnp
+.pnp.*
+
+# Next.js build output
+/.next/
+/out/
+/dist/
+
+# Legacy static-export copies generated at the repository root
+/_next/
+/404/
+/dev/
+/level/
+/maze/
+/progress/
+/settings/
+/404.html
+/index.html
+
+# Tests and tooling
+/coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Local environment files (commit an explicit example if one is added)
+.env*
+!.env.example
+
+# Vercel
+/.vercel/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS and editors
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Certificates and local secrets
+*.pem
