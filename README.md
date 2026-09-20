@@ -1,5 +1,7 @@
 # 儿童迷宫
 
+![儿童迷宫 Logo](public/icons/icon-192.png)
+
 一个面向儿童的移动端优先迷宫 Web App。孩子可以在触屏设备上直接划线走迷宫，使用局部提示或完整答案，并在浏览器本地保存闯关进度。
 
 ## 功能
@@ -10,6 +12,7 @@
 - 逐关解锁、成就与进度统计
 - 家长设置和调试用迷宫 Playground
 - 纯前端静态导出，不依赖数据库或服务端运行时
+- 内置 Web App Manifest、Apple Touch Icon 和 maskable PWA 图标
 
 ## 技术栈
 
@@ -71,6 +74,8 @@ npm run build      # 生成静态站点到 out/
 6. 当前版本不需要配置环境变量。
 
 推送到非生产分支会生成 Preview Deployment；合并或推送到生产分支后会生成 Production Deployment。本地的 `43117` 端口只影响开发服务器，不影响 Vercel 的线上端口分配。
+
+部署到 Vercel 后站点会自动使用 HTTPS，并可通过支持 PWA 的浏览器添加到主屏幕。PWA 图标位于 `public/icons/`，Manifest 由 `src/app/manifest.ts` 生成。
 
 ## 项目结构
 

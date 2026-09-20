@@ -8,6 +8,7 @@
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { MazeBoard, type DrawStatus } from "@/components/maze/MazeBoard";
 import { CompletionDialog } from "@/components/ui/CompletionDialog";
@@ -152,7 +153,13 @@ export default function DevMazePage() {
     <main className="flex h-dvh flex-col" style={{ background: theme.pageBg }}>
       {/* 顶栏：迷宫名 + 💡（不醒目）+ 高级设置 */}
       <header className="flex items-center gap-2 px-4 py-3">
-        <span className="text-xl" aria-hidden>🌀</span>
+        <Image
+          src="/icons/icon-192.png"
+          alt=""
+          width={28}
+          height={28}
+          aria-hidden
+        />
         <h1 className="text-base font-bold">迷宫</h1>
         <span className="hidden rounded bg-black/5 px-2 py-0.5 font-mono text-xs text-neutral-400 sm:inline">
           {seed}

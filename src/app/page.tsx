@@ -6,6 +6,7 @@
  */
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRef } from "react";
 import { useRouter } from "next/navigation";
 import { LevelCard } from "@/components/ui/LevelCard";
@@ -37,7 +38,15 @@ export default function HomePage() {
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 pb-8 pt-10">
       {/* Logo */}
       <div className="mb-8 text-center">
-        <div className="text-5xl" aria-hidden>🌀</div>
+        <Image
+          src="/icons/icon-192.png"
+          alt=""
+          width={80}
+          height={80}
+          priority
+          className="mx-auto"
+          aria-hidden
+        />
         <h1 className="mt-2 text-3xl font-bold tracking-wide">儿童迷宫</h1>
         <p className="mt-1 text-sm text-neutral-400">
           {progress.totalCompleted} / {MAZE_CONFIGS.length} 张 · {progress.totalStars} ⭐
