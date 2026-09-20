@@ -179,9 +179,9 @@ export function MazeClient() {
   const showTimer = settings.timerVisible && elapsedMs > 0;
 
   return (
-    <main className="flex h-dvh flex-col overscroll-none" style={{ background: theme.pageBg }}>
+    <main className="game-shell flex h-dvh flex-col overscroll-none" style={{ background: theme.pageBg }}>
       {/* 顶栏：极简（需求 #6） */}
-      <header className="flex items-center gap-2 px-3 py-2">
+      <header className="game-header flex items-center gap-2 px-3 py-2">
         <button
           onClick={withClick(() => router.push(`/level/${level}`))}
           className="flex h-11 w-11 items-center justify-center rounded-full text-xl text-neutral-400 hover:bg-black/5 active:scale-95"
@@ -189,7 +189,7 @@ export function MazeClient() {
         >
           ←
         </button>
-        <h1 className="text-sm font-medium text-neutral-500">
+        <h1 className="game-title text-sm font-medium text-neutral-500">
           {theme.name} · {config.label}
         </h1>
         {showTimer && (
@@ -197,7 +197,7 @@ export function MazeClient() {
             {(elapsedMs / 1000).toFixed(1)}s
           </span>
         )}
-        <div className="ml-auto">
+        <div className="game-hint ml-auto">
           <HintMenu
             onPartialHint={handlePartialHint}
             onFullSolution={handleFullSolution}
@@ -207,10 +207,12 @@ export function MazeClient() {
       </header>
 
       {/* 竖屏且宽度太小时：轻量横屏提示（需求 #47，可关闭） */}
-      <OrientationHint />
+      <div className="game-orientation">
+        <OrientationHint />
+      </div>
 
       {/* 迷宫 */}
-      <section className="relative min-h-0 flex-1 px-2 pb-3">
+      <section className="game-stage relative min-h-0 flex-1 px-2 pb-3">
         <MazeBoard
           key={`${config.id}-${adapted?.rows}x${adapted?.cols}-${resetCount}`}
           maze={maze}
@@ -251,7 +253,7 @@ export function MazeClient() {
 
       {/* 底部提示文字（极简） */}
       {status !== "completed" && (
-        <footer className="px-4 pb-3">
+        <footer className="game-footer px-4 pb-3">
           <p className="text-center text-xs text-neutral-400">
             {status === "idle" && `从 ${theme.startEmoji} 出发，画线找到 ${theme.endEmoji}`}
             {status === "drawing" && "沿着路往前画…"}

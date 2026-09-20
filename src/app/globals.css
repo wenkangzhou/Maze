@@ -19,6 +19,238 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/*
+ * iPad 横屏布局：在手机上保留熟悉的单列结构；横屏平板则主动利用宽度，
+ * 同时通过 safe-area 适配添加到主屏幕后可能出现的圆角与系统栏。
+ */
+@media (min-width: 900px) and (orientation: landscape) {
+  .home-shell {
+    display: grid;
+    max-width: 72rem;
+    grid-template-columns: minmax(14rem, 0.72fr) minmax(0, 1.75fr);
+    grid-template-rows: auto auto;
+    align-content: center;
+    column-gap: 2.5rem;
+    row-gap: 1.25rem;
+    padding:
+      max(2rem, env(safe-area-inset-top))
+      max(2.5rem, env(safe-area-inset-right))
+      max(2rem, env(safe-area-inset-bottom))
+      max(2.5rem, env(safe-area-inset-left));
+  }
+
+  .home-hero {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: end;
+    margin-bottom: 0;
+    padding-left: 0.5rem;
+    text-align: left;
+  }
+
+  .home-logo {
+    width: 96px;
+    height: 96px;
+    margin-inline: 0;
+  }
+
+  .home-levels {
+    display: grid;
+    grid-column: 2;
+    grid-row: 1 / 3;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-self: center;
+    gap: 0.875rem;
+  }
+
+  .home-levels > :first-child {
+    grid-column: 1 / -1;
+  }
+
+  .home-actions {
+    grid-column: 1;
+    grid-row: 2;
+    align-self: start;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    margin-top: 0;
+  }
+
+  .level-shell {
+    display: grid;
+    max-width: 72rem;
+    grid-template-columns: minmax(13rem, 16rem) minmax(0, 1fr);
+    align-items: center;
+    gap: 2.5rem;
+    padding:
+      max(2rem, env(safe-area-inset-top))
+      max(2.5rem, env(safe-area-inset-right))
+      max(2rem, env(safe-area-inset-bottom))
+      max(2.5rem, env(safe-area-inset-left));
+  }
+
+  .level-header {
+    display: grid;
+    grid-column: 1;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    align-self: center;
+    gap: 0.75rem;
+    margin-bottom: 0;
+  }
+
+  .level-heading {
+    min-width: 0;
+  }
+
+  .level-emoji {
+    grid-column: 2;
+    margin-left: 0;
+    font-size: 4rem;
+    line-height: 1;
+  }
+
+  .level-grid {
+    grid-column: 2;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    align-self: center;
+    gap: 0.875rem;
+  }
+
+  .level-grid > a,
+  .level-grid > div {
+    height: 100%;
+  }
+
+  .maze-card {
+    min-height: 7.75rem;
+    justify-content: center;
+    padding: 0.75rem;
+  }
+
+  .level-locked {
+    grid-column: 2;
+    margin-top: 0;
+  }
+
+  .progress-shell,
+  .settings-shell {
+    max-width: 64rem;
+    padding:
+      max(2rem, env(safe-area-inset-top))
+      max(2.5rem, env(safe-area-inset-right))
+      max(2rem, env(safe-area-inset-bottom))
+      max(2.5rem, env(safe-area-inset-left));
+  }
+
+  .page-header {
+    margin-bottom: 1.5rem;
+  }
+
+  .progress-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    align-items: start;
+    gap: 2rem;
+  }
+
+  .progress-achievements-title {
+    margin-top: 0;
+  }
+
+  .progress-badges {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .settings-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .settings-row {
+    min-height: 4.75rem;
+  }
+
+  .settings-danger {
+    max-width: calc(50% - 0.375rem);
+  }
+
+  .settings-note {
+    text-align: left;
+  }
+
+  .game-shell {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .game-header {
+    position: absolute;
+    z-index: 30;
+    top: max(0.75rem, env(safe-area-inset-top));
+    right: max(1rem, env(safe-area-inset-right));
+    left: max(1rem, env(safe-area-inset-left));
+    padding: 0;
+    pointer-events: none;
+  }
+
+  .game-header > * {
+    pointer-events: auto;
+  }
+
+  .game-header > button,
+  .game-hint {
+    border: 1px solid rgb(0 0 0 / 6%);
+    background: rgb(255 255 255 / 82%);
+    box-shadow: 0 6px 24px rgb(61 55 48 / 8%);
+    backdrop-filter: blur(12px);
+  }
+
+  .game-title {
+    border: 1px solid rgb(0 0 0 / 6%);
+    border-radius: 999px;
+    background: rgb(255 255 255 / 82%);
+    padding: 0.7rem 0.9rem;
+    box-shadow: 0 6px 24px rgb(61 55 48 / 8%);
+    backdrop-filter: blur(12px);
+  }
+
+  .game-hint {
+    border-radius: 999px;
+  }
+
+  .game-orientation {
+    position: absolute;
+    z-index: 25;
+    top: 4.25rem;
+    right: 1rem;
+    left: 1rem;
+  }
+
+  .game-stage {
+    position: absolute;
+    inset: 0;
+    padding: 0.625rem 1rem 0.75rem;
+  }
+
+  .game-footer {
+    position: absolute;
+    z-index: 20;
+    bottom: max(0.75rem, env(safe-area-inset-bottom));
+    left: 50%;
+    width: max-content;
+    max-width: calc(100% - 2rem);
+    transform: translateX(-50%);
+    border: 1px solid rgb(0 0 0 / 6%);
+    border-radius: 999px;
+    background: rgb(255 255 255 / 82%);
+    padding: 0.55rem 0.9rem;
+    box-shadow: 0 6px 24px rgb(61 55 48 / 8%);
+    backdrop-filter: blur(12px);
+  }
+}
+
 /* 通关粒子（需求 #26）：少量 ⭐✨🎉 从终点散开，约 1 秒 */
 @keyframes celebrate-pop {
   0% {

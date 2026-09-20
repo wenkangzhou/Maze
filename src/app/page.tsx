@@ -35,16 +35,16 @@ export default function HomePage() {
   };
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 pb-8 pt-10">
+    <main className="home-shell mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 pb-8 pt-10">
       {/* Logo */}
-      <div className="mb-8 text-center">
+      <div className="home-hero mb-8 text-center">
         <Image
           src="/icons/icon-192.png"
           alt=""
           width={80}
           height={80}
           priority
-          className="mx-auto"
+          className="home-logo mx-auto"
           aria-hidden
         />
         <h1 className="mt-2 text-3xl font-bold tracking-wide">儿童迷宫</h1>
@@ -54,7 +54,7 @@ export default function HomePage() {
       </div>
 
       {/* 关卡 */}
-      <div className="flex flex-col gap-3">
+      <div className="home-levels flex flex-col gap-3">
         {([1, 2, 3, 4, 5] as MazeLevel[]).map((level) => (
           <LevelCard
             key={level}
@@ -67,7 +67,7 @@ export default function HomePage() {
       </div>
 
       {/* 底部入口 */}
-      <div className="mt-8 flex items-center justify-between">
+      <div className="home-actions mt-8 flex items-center justify-between">
         <Link
           href="/progress"
           className="flex min-h-11 items-center gap-1 rounded-2xl px-4 text-sm font-medium text-neutral-500 hover:bg-black/5 active:scale-95"

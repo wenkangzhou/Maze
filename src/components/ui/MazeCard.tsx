@@ -36,7 +36,7 @@ export function MazeCard({ config, progress, locked }: MazeCardProps) {
 
   const inner = (
     <div
-      className={`flex flex-col items-center gap-1 rounded-2xl border-2 p-2 transition active:scale-95 ${
+      className={`maze-card flex h-full flex-col items-center gap-1 rounded-2xl border-2 p-2 transition active:scale-95 ${
         locked
           ? "border-black/5 bg-black/[0.03] opacity-50"
           : done

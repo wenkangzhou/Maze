@@ -39,26 +39,26 @@ export function LevelClient() {
   const completed = configs.filter((c) => progress.mazes[c.id]?.completed).length;
 
   return (
-    <main className="mx-auto min-h-dvh w-full max-w-md px-5 pb-8 pt-6" style={{ background: theme.pageBg }}>
-      <header className="mb-5 flex items-center gap-3">
+    <main className="level-shell mx-auto min-h-dvh w-full max-w-md px-5 pb-8 pt-6" style={{ background: theme.pageBg }}>
+      <header className="level-header mb-5 flex items-center gap-3">
         <Link
           href="/"
-          className="flex h-11 w-11 items-center justify-center rounded-full text-xl text-neutral-400 hover:bg-black/5 active:scale-95"
+          className="level-back flex h-11 w-11 items-center justify-center rounded-full text-xl text-neutral-400 hover:bg-black/5 active:scale-95"
           aria-label="返回首页"
         >
           ←
         </Link>
-        <div>
+        <div className="level-heading">
           <h1 className="text-xl font-bold">
             Level {level} · {LEVEL_NAMES[level]}
           </h1>
           <p className="text-sm text-neutral-400">{completed} / {configs.length} 张完成</p>
         </div>
-        <span className="ml-auto text-3xl" aria-hidden>{theme.startEmoji}</span>
+        <span className="level-emoji ml-auto text-3xl" aria-hidden>{theme.startEmoji}</span>
       </header>
 
       {!levelUnlocked ? (
-        <div className="mt-16 flex flex-col items-center gap-3 text-center">
+        <div className="level-locked mt-16 flex flex-col items-center gap-3 text-center">
           <span className="text-5xl">🔒</span>
           <p className="text-neutral-500">完成上一级任意 10 张迷宫后解锁</p>
           <Link
@@ -69,7 +69,7 @@ export function LevelClient() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-4 gap-3 sm:grid-cols-5">
+        <div className="level-grid grid grid-cols-4 gap-3 sm:grid-cols-5">
           {configs.map((config, i) => (
             <MazeCard
               key={config.id}
