@@ -38,7 +38,7 @@ export function MazeCard({ config, progress, locked }: MazeCardProps) {
     <div
       className={`maze-card flex h-full flex-col items-center gap-1 rounded-2xl border-2 p-2 transition active:scale-95 ${
         locked
-          ? "border-black/5 bg-black/[0.03] opacity-50"
+          ? "border-black/5 bg-black/[0.03] opacity-65"
           : done
             ? "border-transparent bg-white shadow-sm"
             : "border-black/10 bg-white"
@@ -53,17 +53,37 @@ export function MazeCard({ config, progress, locked }: MazeCardProps) {
             🔒
           </div>
         ) : (
-          <MiniMazePreview maze={maze} size={84} />
+          <>
+            <MiniMazePreview maze={maze} size={84} />
+            {done && (
+              <span
+                className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-[#5B7A4E] text-xs font-bold text-white shadow-sm"
+                aria-label="已完成"
+              >
+                ✓
+              </span>
+            )}
+          </>
         )}
       </div>
       <p className="text-xs font-semibold tabular-nums">{config.label}</p>
-      <p className="text-[10px] leading-none text-amber-400" aria-label={`${stars} 星`}>
-        {"★".repeat(stars)}
-        <span className="text-neutral-300">{"★".repeat(3 - stars)}</span>
-      </p>
+      {!locked && (
+        <p className="text-[10px] leading-none text-amber-400" aria-label={`${stars} 星`}>
+          {"★".repeat(stars)}
+          <span className="text-neutral-300">{"★".repeat(3 - stars)}</span>
+        </p>
+      )}
     </div>
   );
 
   if (locked) return <div aria-disabled>{inner}</div>;
-  return <Link href={`/maze/${config.id}`} className="block">{inner}</Link>;
+  return (
+    <Link
+      href={`/maze/${config.id}`}
+      className="block"
+      aria-label={`${config.label}${done ? `，已完成，${stars} 星` : "，未完成"}`}
+    >
+      {inner}
+    </Link>
+  );
 }

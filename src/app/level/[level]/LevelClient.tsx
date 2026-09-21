@@ -7,6 +7,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { MazeCard } from "@/components/ui/MazeCard";
+import { AppLoading } from "@/components/ui/AppLoading";
 import { getLevelConfigs } from "@/data/levels";
 import { useAppSettings, usePlayerProgress } from "@/lib/storage/hooks";
 import { isLevelUnlocked, isMazeUnlocked } from "@/lib/storage/progress";
@@ -21,8 +22,10 @@ const LEVEL_NAMES: Record<MazeLevel, string> = {
 export function LevelClient() {
   const params = useParams();
   const level = Number(params.level) as MazeLevel;
-  const { progress } = usePlayerProgress();
-  const { settings } = useAppSettings();
+  const { progress, hydrated: progressHydrated } = usePlayerProgress();
+  const { settings, hydrated: settingsHydrated } = useAppSettings();
+
+  if (!progressHydrated || !settingsHydrated) return <AppLoading />;
 
   if (!level || level < 1 || level > 5) {
     return (

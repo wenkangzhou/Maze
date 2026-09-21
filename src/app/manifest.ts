@@ -12,7 +12,8 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     scope: "/",
     display: "standalone",
-    orientation: "portrait-primary",
+    // 允许 iPad 两个横屏方向，不强迫孩子固定把某一侧朝上。
+    orientation: "landscape",
     background_color: "#faf7f2",
     theme_color: "#faf7f2",
     categories: ["games", "education", "kids"],

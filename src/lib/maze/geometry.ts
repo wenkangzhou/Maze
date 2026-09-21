@@ -126,37 +126,44 @@ export function pointsToPathD(points: Point[]): string {
 }
 
 /**
- * iPad / 小屏适配：按可用屏幕宽度降级 cell 数。
+ * iPad / 小屏适配：按迷宫区域的实际宽高降级 cell 数。
  *
  * 原则（用户反馈）：网格太多时手指一格太窄，宁可减少格子
  * 也要保证每个格子够宽、好画。viewBox 不变，cellSize 由
  * 实际行列数决定，所以降级 = 每格更大。
  *
- * @param maxScreenWidth 游戏区域可用屏幕宽度（px）
- * @param minCellPx      手指划线最小 cell 宽度，默认 44px（无障碍）
+ * @param maxScreenWidth  游戏区域可用屏幕宽度（px）
+ * @param minCellPx       手指划线最小 cell 边长，默认 44px（无障碍）
+ * @param maxScreenHeight 游戏区域可用屏幕高度（px）
  */
 export function adaptGridToScreen(
   rows: number,
   cols: number,
   maxScreenWidth: number,
-  minCellPx: number = 44
+  minCellPx: number = 44,
+  maxScreenHeight: number = Number.POSITIVE_INFINITY
 ): { rows: number; cols: number; degraded: boolean } {
-  // 估算 cellSize：viewBox 1000 宽，迷宫占 920（padding 40×2），
-  // 屏幕 px = 逻辑单位 × (maxScreenWidth / 1000)
-  const scale = maxScreenWidth / 1000;
-  const usableView = 1000 - 80; // padding
+  // SVG 默认 preserveAspectRatio="meet"，实际缩放由宽高里更紧的一边决定。
+  const scale = Math.min(
+    maxScreenWidth / VIEW_WIDTH,
+    maxScreenHeight / VIEW_HEIGHT
+  );
+  const usableViewWidth = VIEW_WIDTH - 80;
+  const usableViewHeight = VIEW_HEIGHT - 80;
 
   let newCols = cols;
   let newRows = rows;
   let degraded = false;
 
-  // 先降 cols（横向是瓶颈），再降 rows
-  while (newCols > 3 && (usableView / newCols) * scale < minCellPx) {
-    newCols--;
-    degraded = true;
-  }
-  while (newRows > 3 && (usableView / newRows) * scale < minCellPx * 0.8) {
-    newRows--;
+  while (newCols > 3 || newRows > 3) {
+    const widthCell = usableViewWidth / newCols;
+    const heightCell = usableViewHeight / newRows;
+    if (Math.min(widthCell, heightCell) * scale >= minCellPx) break;
+
+    // 优先减少当前真正限制 cellSize 的维度。
+    if (widthCell <= heightCell && newCols > 3) newCols--;
+    else if (newRows > 3) newRows--;
+    else if (newCols > 3) newCols--;
     degraded = true;
   }
 

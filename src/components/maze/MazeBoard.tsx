@@ -309,6 +309,14 @@ export function MazeBoard({
   return (
     <svg
       ref={svgRef}
+      role="img"
+      aria-label={
+        interactive
+          ? `迷宫画板：从 ${theme.startEmoji} 出发，画线找到 ${theme.endEmoji}`
+          : `迷宫预览：从 ${theme.startEmoji} 到 ${theme.endEmoji}`
+      }
+      data-maze-rows={maze.rows}
+      data-maze-cols={maze.cols}
       viewBox={`0 0 ${VIEW_WIDTH} ${VIEW_HEIGHT}`}
       className="block h-full w-full select-none"
       style={{ touchAction: "none" }}

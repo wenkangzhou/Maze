@@ -7,6 +7,12 @@ import { generateMaze } from "@/lib/maze/generator";
 import { hasWallBetween, solveMaze } from "@/lib/maze/solver";
 import { validateMaze } from "@/lib/maze/validate";
 import { evaluateMazeQuality } from "@/lib/maze/difficulty";
+import {
+  adaptGridToScreen,
+  computeGeometry,
+  VIEW_HEIGHT,
+  VIEW_WIDTH,
+} from "@/lib/maze/geometry";
 import { MAZE_CONFIGS } from "@/data/levels";
 import type { Maze } from "@/lib/maze/types";
 
@@ -113,6 +119,20 @@ describe("difficulty", () => {
       largeTotal += scoreOf(generateMaze({ rows: 14, cols: 14, seed: `s-${i}` }));
     }
     expect(largeTotal / n).toBeGreaterThan(smallTotal / n);
+  });
+});
+
+describe("触屏网格适配", () => {
+  it.each([
+    [992, 746],
+    [752, 876],
+  ])("在 %d×%d 的可用区域里把格子保持在 44px 左右", (width, height) => {
+    const adapted = adaptGridToScreen(15, 20, width, 44, height);
+    const geo = computeGeometry(adapted.rows, adapted.cols);
+    const scale = Math.min(width / VIEW_WIDTH, height / VIEW_HEIGHT);
+    expect(geo.cellSize * scale).toBeGreaterThanOrEqual(44);
+    expect(adapted.rows).toBeLessThanOrEqual(15);
+    expect(adapted.cols).toBeLessThanOrEqual(20);
   });
 });
 

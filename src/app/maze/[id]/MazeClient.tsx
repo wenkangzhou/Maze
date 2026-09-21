@@ -4,7 +4,7 @@
  * 游戏页面（需求 #6）：迷宫是绝对主角，UI 极简。
  *
  * - 顶栏只有「← 返回 / 关卡名·编号 / 💡 提示」
- * - iPad / 小屏按屏幕宽度自适应降级网格（用户反馈：格子太多不好画）
+ * - iPad / 小屏按迷宫区域的实际宽高自适应降级网格
  * - 通关弹窗含「提高难度」（用户反馈）：进入下一等级第一张图
  * - 通关自动保存进度 + 星级
  */
@@ -26,6 +26,7 @@ import {
 } from "@/lib/maze/geometry";
 import { generateMaze } from "@/lib/maze/generator";
 import { useAppSettings, usePlayerProgress } from "@/lib/storage/hooks";
+import { isLevelUnlocked, isMazeUnlocked } from "@/lib/storage/progress";
 import { THEMES } from "@/lib/maze/themes";
 import type { MazeLevel, Point } from "@/lib/maze/types";
 
@@ -37,13 +38,13 @@ export function MazeClient() {
   const id = typeof params.id === "string" ? params.id : "";
   const config = getMazeConfig(id);
 
-  const { progress, complete } = usePlayerProgress();
-  const { settings } = useAppSettings();
+  const { progress, complete, hydrated: progressHydrated } = usePlayerProgress();
+  const { settings, hydrated: settingsHydrated } = useAppSettings();
 
   // --- iPad / 屏幕自适应：网格过多时降级（用户反馈） ---
-  const [screenWidth, setScreenWidth] = useState(1024);
+  const [viewport, setViewport] = useState({ width: 1024, height: 768 });
   useEffect(() => {
-    const update = () => setScreenWidth(Math.min(window.innerWidth, 1200));
+    const update = () => setViewport({ width: window.innerWidth, height: window.innerHeight });
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
@@ -51,10 +52,13 @@ export function MazeClient() {
 
   const adapted = useMemo(() => {
     if (!config) return null;
-    // 迷宫区域大约占屏幕宽度的 92%
-    const usable = screenWidth * 0.92;
-    return adaptGridToScreen(config.rows, config.cols, usable, 44);
-  }, [config, screenWidth]);
+    const landscapeTablet = viewport.width >= 900 && viewport.width > viewport.height;
+    const portrait = viewport.height > viewport.width;
+    const usableWidth = Math.max(1, viewport.width - (landscapeTablet ? 32 : 16));
+    const reservedHeight = landscapeTablet ? 22 : 100 + (portrait ? 48 : 0);
+    const usableHeight = Math.max(1, viewport.height - reservedHeight);
+    return adaptGridToScreen(config.rows, config.cols, usableWidth, 44, usableHeight);
+  }, [config, viewport]);
 
   const maze = useMemo(() => {
     if (!config || !adapted) return null;
@@ -72,6 +76,7 @@ export function MazeClient() {
   // --- 游玩状态 ---
   const [status, setStatus] = useState<DrawStatus>("idle");
   const [elapsedMs, setElapsedMs] = useState(0);
+  const [liveElapsedMs, setLiveElapsedMs] = useState(0);
   const [tip, setTip] = useState<Point | null>(null);
   const [resetCount, setResetCount] = useState(0);
 
@@ -82,6 +87,7 @@ export function MazeClient() {
   const [usedFullSolution, setUsedFullSolution] = useState(false);
   const [newAchievements, setNewAchievements] = useState<string[]>([]);
   const hintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startedAtRef = useRef<number | null>(null);
   const savedRef = useRef(false);
 
   const geo = useMemo(
@@ -89,23 +95,31 @@ export function MazeClient() {
     [maze]
   );
   // 调试钩子：自动化测试可读取当前迷宫
-  if (typeof window !== "undefined" && maze) {
-    (window as unknown as { __mazeDebug?: unknown }).__mazeDebug = maze;
-  }
+  useEffect(() => {
+    if (!maze) return;
+    const debugWindow = window as unknown as { __mazeDebug?: unknown };
+    debugWindow.__mazeDebug = maze;
+    return () => {
+      delete debugWindow.__mazeDebug;
+    };
+  }, [maze]);
   const solutionSvg = useMemo(
     () => (maze && geo ? solutionToSvgPoints(maze.solution, geo) : []),
     [maze, geo]
   );
 
   const resetState = useCallback(() => {
+    if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
     setStatus("idle");
     setElapsedMs(0);
+    setLiveElapsedMs(0);
     setHintPoints(null);
     setUsedPartialHint(false);
     setShowFullSolution(false);
     setUsedFullSolution(false);
     setNewAchievements([]);
     setTip(null);
+    startedAtRef.current = null;
     savedRef.current = false;
   }, []);
 
@@ -113,6 +127,32 @@ export function MazeClient() {
   useEffect(() => {
     resetState();
   }, [id, resetState]);
+
+  useEffect(() => {
+    if (
+      !settings.timerVisible ||
+      startedAtRef.current === null ||
+      status === "idle" ||
+      status === "completed"
+    ) {
+      return;
+    }
+    const updateTimer = () => {
+      if (startedAtRef.current !== null) {
+        setLiveElapsedMs(Date.now() - startedAtRef.current);
+      }
+    };
+    updateTimer();
+    const timer = window.setInterval(updateTimer, 100);
+    return () => window.clearInterval(timer);
+  }, [settings.timerVisible, status]);
+
+  useEffect(
+    () => () => {
+      if (hintTimerRef.current) clearTimeout(hintTimerRef.current);
+    },
+    []
+  );
 
   if (!config || !maze || !theme || !geo) {
     return (
@@ -131,9 +171,50 @@ export function MazeClient() {
   const level = config.level;
   const levelConfigs = getLevelConfigs(level);
   const idxInLevel = levelConfigs.findIndex((c) => c.id === config.id);
+  const mazeIds = levelConfigs.map((item) => item.id);
   const nextConfig = levelConfigs[idxInLevel + 1];
   const nextLevelFirst: string | null =
     level < 5 ? (MAZE_CONFIGS.find((c) => c.level === ((level + 1) as MazeLevel))?.id ?? null) : null;
+  const ready = progressHydrated && settingsHydrated;
+  const levelUnlocked = ready && isLevelUnlocked(level, progress, settings);
+  const mazeUnlocked =
+    ready && isMazeUnlocked(idxInLevel, level, mazeIds, progress, settings);
+
+  if (!ready) {
+    return (
+      <main
+        className="flex min-h-dvh flex-col items-center justify-center gap-3"
+        style={{ background: theme.pageBg }}
+        aria-busy="true"
+      >
+        <span className="text-4xl" aria-hidden>{theme.startEmoji}</span>
+        <p className="text-sm text-neutral-400">正在准备迷宫…</p>
+      </main>
+    );
+  }
+
+  if (!levelUnlocked || !mazeUnlocked) {
+    return (
+      <main
+        className="flex min-h-dvh flex-col items-center justify-center gap-4 px-6 text-center"
+        style={{ background: theme.pageBg }}
+      >
+        <span className="text-5xl" aria-hidden>🔒</span>
+        <h1 className="text-xl font-bold">这张迷宫还没解锁</h1>
+        <p className="max-w-xs text-sm leading-6 text-neutral-500">
+          {levelUnlocked
+            ? "先完成前一张迷宫，就可以继续挑战。"
+            : "先完成上一级任意 10 张迷宫，就可以开启这个等级。"}
+        </p>
+        <button
+          onClick={() => router.push(levelUnlocked ? `/level/${level}` : "/")}
+          className="min-h-11 rounded-2xl bg-[#5B7A4E] px-6 font-semibold text-white active:scale-95"
+        >
+          {levelUnlocked ? "返回关卡地图" : "返回首页"}
+        </button>
+      </main>
+    );
+  }
 
   const handlePartialHint = () => {
     if (status === "completed") return;
@@ -154,6 +235,7 @@ export function MazeClient() {
 
   const handleComplete = (info: { elapsedMs: number }) => {
     setElapsedMs(info.elapsedMs);
+    setLiveElapsedMs(info.elapsedMs);
     if (!savedRef.current) {
       savedRef.current = true;
       const stars = computeStars(usedPartialHint, usedFullSolution);
@@ -175,8 +257,26 @@ export function MazeClient() {
     setResetCount((n) => n + 1);
   };
 
+  const handleDrawStart = () => {
+    if (startedAtRef.current === null) {
+      startedAtRef.current = Date.now();
+      setLiveElapsedMs(0);
+    }
+    playStart(settings.sound);
+  };
+
   const stars = computeStars(usedPartialHint, usedFullSolution);
-  const showTimer = settings.timerVisible && elapsedMs > 0;
+  const showTimer = settings.timerVisible && status !== "idle";
+  const displayedElapsedMs = status === "completed" ? elapsedMs : liveElapsedMs;
+  const nextLevel = level < 5 ? ((level + 1) as MazeLevel) : null;
+  const nextLevelUnlocked =
+    nextLevel !== null && isLevelUnlocked(nextLevel, progress, settings);
+  const nextLabel = nextConfig
+    ? "下一关"
+    : nextLevelFirst && nextLevelUnlocked
+      ? `进入 Level ${nextLevel}`
+      : "返回地图";
+  const primaryReturnsToMap = !nextConfig && !(nextLevelFirst && nextLevelUnlocked);
 
   return (
     <main className="game-shell flex h-dvh flex-col overscroll-none" style={{ background: theme.pageBg }}>
@@ -194,7 +294,7 @@ export function MazeClient() {
         </h1>
         {showTimer && (
           <span className="ml-2 text-xs tabular-nums text-neutral-400">
-            {(elapsedMs / 1000).toFixed(1)}s
+            {(displayedElapsedMs / 1000).toFixed(1)}s
           </span>
         )}
         <div className="game-hint ml-auto">
@@ -221,33 +321,39 @@ export function MazeClient() {
           showFullSolution={showFullSolution}
           onTipChange={setTip}
           onStatusChange={setStatus}
-          onDrawStart={() => playStart(settings.sound)}
+          onDrawStart={handleDrawStart}
           onComplete={handleComplete}
         />
 
         {status === "completed" && (
           <CompletionDialog
-            stars={settings.starsEnabled ? stars : 3}
+            stars={stars}
+            showStars={settings.starsEnabled}
             elapsedMs={settings.timerVisible ? elapsedMs : undefined}
-            nextLabel={nextConfig ? "下一关" : "换一张"}
+            nextLabel={nextLabel}
             newAchievements={newAchievements}
             onNext={withClick(() => {
               if (nextConfig) router.push(`/maze/${nextConfig.id}`);
-              else replay();
+              else if (nextLevelFirst && nextLevelUnlocked) router.push(`/maze/${nextLevelFirst}`);
+              else router.push(`/level/${level}`);
             })}
             onReplay={withClick(replay)}
-            onBack={withClick(() => router.push(`/level/${level}`))}
+            onBack={
+              primaryReturnsToMap
+                ? undefined
+                : withClick(() => router.push(`/level/${level}`))
+            }
+            challengeLabel={
+              nextConfig && nextLevelFirst && nextLevelUnlocked
+                ? `太简单了？试试 Level ${nextLevel}`
+                : undefined
+            }
+            onChallenge={
+              nextConfig && nextLevelFirst && nextLevelUnlocked
+                ? withClick(() => router.push(`/maze/${nextLevelFirst}`))
+                : undefined
+            }
           />
-        )}
-
-        {/* 提高难度：通关后如果还有更高等级，提供入口（用户反馈） */}
-        {status === "completed" && nextLevelFirst && level < 5 && (
-          <button
-            onClick={withClick(() => router.push(`/maze/${nextLevelFirst}`))}
-            className="absolute bottom-3 left-1/2 z-10 -translate-x-1/2 rounded-full border border-black/10 bg-white/90 px-4 py-2 text-xs font-medium text-neutral-500 shadow-sm backdrop-blur active:scale-95"
-          >
-            太简单了？试试 Level {level + 1} →
-          </button>
         )}
       </section>
 

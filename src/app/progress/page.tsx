@@ -6,6 +6,7 @@
 
 import Link from "next/link";
 import { MAZE_CONFIGS } from "@/data/levels";
+import { AppLoading } from "@/components/ui/AppLoading";
 import { usePlayerProgress } from "@/lib/storage/hooks";
 import { ACHIEVEMENTS } from "@/lib/storage/progress";
 import type { MazeLevel } from "@/lib/maze/types";
@@ -15,7 +16,9 @@ const LEVEL_NAMES: Record<MazeLevel, string> = {
 };
 
 export default function ProgressPage() {
-  const { progress } = usePlayerProgress();
+  const { progress, hydrated } = usePlayerProgress();
+
+  if (!hydrated) return <AppLoading />;
 
   const completedInLevel = (level: MazeLevel) =>
     Object.keys(progress.mazes).filter(

@@ -365,6 +365,42 @@ body {
   animation: slide-fade-in 0.3s ease-out both;
 }
 
+/* 家长入口：长按时用填充进度给出明确反馈。 */
+@keyframes settings-hold {
+  from {
+    opacity: 0.18;
+    transform: scale(0);
+  }
+  to {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+}
+.settings-entry {
+  touch-action: manipulation;
+  -webkit-touch-callout: none;
+}
+.settings-hold-fill {
+  position: absolute;
+  inset: 0.25rem;
+  border-radius: 999px;
+  background: #5b7a4e;
+  animation: settings-hold 2s linear forwards;
+}
+
+@keyframes loading-hop {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-0.35rem);
+  }
+}
+.loading-hop {
+  animation: loading-hop 0.9s ease-in-out infinite;
+}
+
 /* 尊重系统「减弱动态效果」设置：关掉所有装饰动画 */
 @media (prefers-reduced-motion: reduce) {
   .celebrate-particle,
@@ -374,6 +410,10 @@ body {
   .start-pulse,
   .hint-march,
   .slide-fade-in {
+    animation: none;
+  }
+  .settings-hold-fill,
+  .loading-hop {
     animation: none;
   }
   .star-pop,

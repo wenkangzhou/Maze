@@ -7,19 +7,21 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LevelCard } from "@/components/ui/LevelCard";
+import { AppLoading } from "@/components/ui/AppLoading";
 import { MAZE_CONFIGS, MAZES_PER_LEVEL } from "@/data/levels";
 import { useAppSettings, usePlayerProgress } from "@/lib/storage/hooks";
 import { isLevelUnlocked } from "@/lib/storage/progress";
 import type { MazeLevel } from "@/lib/maze/types";
 
 export default function HomePage() {
-  const { progress } = usePlayerProgress();
-  const { settings } = useAppSettings();
+  const { progress, hydrated: progressHydrated } = usePlayerProgress();
+  const { settings, hydrated: settingsHydrated } = useAppSettings();
   const router = useRouter();
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isPressingSettings, setIsPressingSettings] = useState(false);
 
   const completedInLevel = (level: MazeLevel) =>
     Object.keys(progress.mazes).filter(
@@ -28,11 +30,28 @@ export default function HomePage() {
 
   // 家长设置：长按 2 秒（需求 #37）
   const startPress = () => {
-    pressTimer.current = setTimeout(() => router.push("/settings"), 2000);
+    if (pressTimer.current) clearTimeout(pressTimer.current);
+    setIsPressingSettings(true);
+    pressTimer.current = setTimeout(() => {
+      setIsPressingSettings(false);
+      pressTimer.current = null;
+      router.push("/settings");
+    }, 2000);
   };
   const cancelPress = () => {
     if (pressTimer.current) clearTimeout(pressTimer.current);
+    pressTimer.current = null;
+    setIsPressingSettings(false);
   };
+
+  useEffect(
+    () => () => {
+      if (pressTimer.current) clearTimeout(pressTimer.current);
+    },
+    []
+  );
+
+  if (!progressHydrated || !settingsHydrated) return <AppLoading />;
 
   return (
     <main className="home-shell mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 pb-8 pt-10">
@@ -74,17 +93,35 @@ export default function HomePage() {
         >
           🏅 我的迷宫
         </Link>
-        <button
-          onPointerDown={startPress}
-          onPointerUp={cancelPress}
-          onPointerLeave={cancelPress}
-          onPointerCancel={cancelPress}
-          className="flex h-11 w-11 items-center justify-center rounded-full text-lg text-neutral-300 transition hover:bg-black/5"
-          aria-label="家长设置（长按）"
-          title="长按 2 秒进入家长设置"
-        >
-          ⚙️
-        </button>
+        <div className="relative">
+          {isPressingSettings && (
+            <span
+              role="status"
+              className="absolute bottom-full right-0 mb-2 whitespace-nowrap rounded-full bg-[#3D3730] px-3 py-1.5 text-xs text-white shadow-sm"
+            >
+              继续按住…
+            </span>
+          )}
+          <button
+            onPointerDown={startPress}
+            onPointerUp={cancelPress}
+            onPointerLeave={cancelPress}
+            onPointerCancel={cancelPress}
+            onContextMenu={(event) => event.preventDefault()}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                router.push("/settings");
+              }
+            }}
+            className="settings-entry relative flex h-11 w-11 select-none items-center justify-center overflow-hidden rounded-full text-lg text-neutral-300 transition hover:bg-black/5"
+            aria-label="家长设置（触屏长按两秒，键盘按回车进入）"
+            title="长按 2 秒进入家长设置"
+          >
+            {isPressingSettings && <span className="settings-hold-fill" aria-hidden />}
+            <span className="relative">⚙️</span>
+          </button>
+        </div>
       </div>
     </main>
   );

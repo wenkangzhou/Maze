@@ -60,12 +60,31 @@ describe("进度记录", () => {
     expect(p.achievements).toContain("first_maze");
   });
 
-  it("成就：10 次无提示完成", () => {
+  it("成就：10 个迷宫无提示完成", () => {
     let p = emptyProgress;
     for (let i = 1; i <= 10; i++) {
       p = recordCompletion(p, `L1-${String(i).padStart(2, "0")}`, 1, 3, 5000, false, false);
     }
     expect(p.achievements).toContain("maze_10");
+    expect(p.achievements).toContain("no_hint_10");
+  });
+
+  it("先用提示、后来无提示重玩，也计入无提示完成", () => {
+    let p = recordCompletion(emptyProgress, "L1-01", 1, 1, 7000, true, true);
+    p = recordCompletion(p, "L1-01", 1, 3, 5000, false, false);
+    for (let i = 2; i <= 10; i++) {
+      p = recordCompletion(
+        p,
+        `L1-${String(i).padStart(2, "0")}`,
+        1,
+        3,
+        5000,
+        false,
+        false
+      );
+    }
+    expect(p.mazes["L1-01"].usedFullSolution).toBe(true);
+    expect(p.mazes["L1-01"].completedWithoutHint).toBe(true);
     expect(p.achievements).toContain("no_hint_10");
   });
 });

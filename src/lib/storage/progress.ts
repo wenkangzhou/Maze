@@ -15,6 +15,8 @@ export interface MazeProgress {
   bestTime?: number;
   usedPartialHint: boolean;
   usedFullSolution: boolean;
+  /** 是否曾在任意一次通关中完全没有使用提示 */
+  completedWithoutHint?: boolean;
   completedAt?: number;
 }
 
@@ -36,7 +38,7 @@ export interface AppSettings {
 const PROGRESS_KEY = "maze-kids-progress-v1";
 const SETTINGS_KEY = "maze-kids-settings-v1";
 
-const DEFAULT_SETTINGS: AppSettings = {
+export const DEFAULT_SETTINGS: AppSettings = {
   sound: true,
   timerVisible: false,
   starsEnabled: true,
@@ -44,7 +46,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   unlockAll: false,
 };
 
-function emptyProgress(): PlayerProgress {
+export function createEmptyProgress(): PlayerProgress {
   return { mazes: {}, totalCompleted: 0, totalStars: 0, achievements: [] };
 }
 
@@ -53,12 +55,12 @@ function emptyProgress(): PlayerProgress {
 export function loadProgress(): PlayerProgress {
   try {
     const raw = localStorage.getItem(PROGRESS_KEY);
-    if (!raw) return emptyProgress();
+    if (!raw) return createEmptyProgress();
     const parsed = JSON.parse(raw) as PlayerProgress;
-    if (!parsed || typeof parsed.mazes !== "object") return emptyProgress();
+    if (!parsed || typeof parsed.mazes !== "object") return createEmptyProgress();
     return parsed;
   } catch {
-    return emptyProgress();
+    return createEmptyProgress();
   }
 }
 
@@ -82,6 +84,9 @@ export function recordCompletion(
 ): PlayerProgress {
   const prev = progress.mazes[mazeId];
   const bestStars = Math.max(prev?.stars ?? 0, stars) as 0 | 1 | 2 | 3;
+  const previouslyCompletedWithoutHint =
+    prev?.completedWithoutHint ??
+    (prev?.completed === true && !prev.usedPartialHint && !prev.usedFullSolution);
   const entry: MazeProgress = {
     mazeId,
     completed: true,
@@ -91,6 +96,8 @@ export function recordCompletion(
       prev?.bestTime === undefined ? elapsedMs : Math.min(prev.bestTime, elapsedMs),
     usedPartialHint: (prev?.usedPartialHint ?? false) || usedPartialHint,
     usedFullSolution: (prev?.usedFullSolution ?? false) || usedFullSolution,
+    completedWithoutHint:
+      previouslyCompletedWithoutHint || (!usedPartialHint && !usedFullSolution),
     completedAt: Date.now(),
   };
   const mazes = { ...progress.mazes, [mazeId]: entry };
@@ -116,7 +123,7 @@ export const ACHIEVEMENTS: Record<string, string> = {
   maze_50: "完成 50 个迷宫",
   level_1_complete: "完成 Level 1 全部迷宫",
   level_2_complete: "完成 Level 2 全部迷宫",
-  no_hint_10: "10 次无提示完成",
+  no_hint_10: "10 个迷宫无提示完成",
   stars_50: "获得 50 颗星",
   stars_100: "获得 100 颗星",
 };
@@ -137,7 +144,10 @@ function checkAchievements(p: PlayerProgress): string[] {
   add("level_2_complete", l2Done);
   let noHint = 0;
   for (const m of Object.values(p.mazes)) {
-    if (m.completed && !m.usedPartialHint && !m.usedFullSolution) noHint++;
+    const completedWithoutHint =
+      m.completedWithoutHint ??
+      (m.completed && !m.usedPartialHint && !m.usedFullSolution);
+    if (completedWithoutHint) noHint++;
   }
   add("no_hint_10", noHint >= 10);
   return [...got];
@@ -155,7 +165,7 @@ export function resetProgress(): PlayerProgress {
   } catch {
     // ignore
   }
-  return emptyProgress();
+  return createEmptyProgress();
 }
 
 // ---------- 设置 ----------
