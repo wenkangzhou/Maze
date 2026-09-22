@@ -12,9 +12,18 @@ import { useRouter } from "next/navigation";
 import { LevelCard } from "@/components/ui/LevelCard";
 import { AppLoading } from "@/components/ui/AppLoading";
 import { MAZE_CONFIGS, MAZES_PER_LEVEL } from "@/data/levels";
+import { getHomeMazeAction } from "@/lib/maze/continue";
 import { useAppSettings, usePlayerProgress } from "@/lib/storage/hooks";
 import { isLevelUnlocked } from "@/lib/storage/progress";
 import type { MazeLevel } from "@/lib/maze/types";
+
+const LEVEL_NAMES: Record<MazeLevel, string> = {
+  1: "草原",
+  2: "森林",
+  3: "沙漠",
+  4: "雪地",
+  5: "太空",
+};
 
 export default function HomePage() {
   const { progress, hydrated: progressHydrated } = usePlayerProgress();
@@ -53,10 +62,19 @@ export default function HomePage() {
 
   if (!progressHydrated || !settingsHydrated) return <AppLoading />;
 
+  const homeAction = getHomeMazeAction(progress, settings);
+  const actionTitle =
+    homeAction.kind === "start"
+      ? "开始闯迷宫"
+      : homeAction.kind === "continue"
+        ? "继续游戏"
+        : "再玩一张";
+  const actionDetail = `Level ${homeAction.config.level} · ${LEVEL_NAMES[homeAction.config.level]} · 第 ${homeAction.config.label} 张`;
+
   return (
     <main className="home-shell mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 pb-8 pt-10">
       {/* Logo */}
-      <div className="home-hero mb-8 text-center">
+      <div className="home-hero mb-5 text-center">
         <Image
           src="/icons/icon-192.png"
           alt=""
@@ -71,6 +89,21 @@ export default function HomePage() {
           {progress.totalCompleted} / {MAZE_CONFIGS.length} 张 · {progress.totalStars} ⭐
         </p>
       </div>
+
+      <Link
+        href={`/maze/${homeAction.config.id}`}
+        className="home-continue mb-6 flex min-h-16 items-center gap-3 rounded-3xl bg-[#5B7A4E] px-5 py-3 text-white shadow-sm transition active:scale-[0.98]"
+        aria-label={`${actionTitle}，${actionDetail}`}
+      >
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/15 text-lg" aria-hidden>
+          ▶
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-base font-bold">{actionTitle}</span>
+          <span className="mt-0.5 block text-xs text-white/75">{actionDetail}</span>
+        </span>
+        <span className="text-2xl text-white/70" aria-hidden>→</span>
+      </Link>
 
       {/* 关卡 */}
       <div className="home-levels flex flex-col gap-3">

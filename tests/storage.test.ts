@@ -13,6 +13,7 @@ import {
   type PlayerProgress,
 } from "@/lib/storage/progress";
 import { MAZE_CONFIGS, getLevelConfigs } from "@/data/levels";
+import { getHomeMazeAction } from "@/lib/maze/continue";
 
 // localStorage mock
 const store: Record<string, string> = {};
@@ -123,5 +124,62 @@ describe("解锁规则（需求 #36）", () => {
     expect(MAZE_CONFIGS.length).toBe(100);
     expect(l1Ids[0]).toBe("L1-01");
     expect(l1Ids[19]).toBe("L1-20");
+  });
+});
+
+describe("首页继续游戏", () => {
+  it("新玩家从第一张开始", () => {
+    const action = getHomeMazeAction(emptyProgress, defaultSettings);
+    expect(action.kind).toBe("start");
+    expect(action.config.id).toBe("L1-01");
+  });
+
+  it("完成一张后继续下一张", () => {
+    const p = recordCompletion(emptyProgress, "L1-01", 1, 3, 5000, false, false);
+    const action = getHomeMazeAction(p, defaultSettings);
+    expect(action.kind).toBe("continue");
+    expect(action.config.id).toBe("L1-02");
+  });
+
+  it("解锁新等级后仍优先完成当前等级", () => {
+    let p = emptyProgress;
+    for (let i = 1; i <= 10; i++) {
+      p = recordCompletion(
+        p,
+        `L1-${String(i).padStart(2, "0")}`,
+        1,
+        3,
+        5000,
+        false,
+        false
+      );
+    }
+    expect(getHomeMazeAction(p, defaultSettings).config.id).toBe("L1-11");
+  });
+
+  it("全部完成后重玩最近完成的一张", () => {
+    const mazes = Object.fromEntries(
+      MAZE_CONFIGS.map((config, index) => [
+        config.id,
+        {
+          mazeId: config.id,
+          completed: true,
+          stars: 3 as const,
+          completionCount: 1,
+          usedPartialHint: false,
+          usedFullSolution: false,
+          completedAt: index,
+        },
+      ])
+    );
+    const p: PlayerProgress = {
+      mazes,
+      totalCompleted: MAZE_CONFIGS.length,
+      totalStars: MAZE_CONFIGS.length * 3,
+      achievements: [],
+    };
+    const action = getHomeMazeAction(p, defaultSettings);
+    expect(action.kind).toBe("replay");
+    expect(action.config.id).toBe("L5-20");
   });
 });
